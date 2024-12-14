@@ -4,7 +4,7 @@
 
 [Conference Paper](https://arxiv.org/abs/2307.12348) | [Journal Paper](http://arxiv.org/abs/2403.07319) | [Project Page](https://zsyoaoa.github.io/projects/resshift/) | [Video](https://www.youtube.com/watch?v=8DB-6Xvvl5o)
 
-<a href="https://colab.research.google.com/drive/1CL8aJO7a_RA4MetanrCLqQO5H7KWO8KI?usp=sharing"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="google colab logo"></a> [![Replicate](https://img.shields.io/badge/Demo-%F0%9F%9A%80%20Replicate-blue)](https://replicate.com/cjwbw/resshift) [![OpenXLab](https://img.shields.io/badge/Demo-%F0%9F%90%BC%20OpenXLab-blue)](https://openxlab.org.cn/apps/detail/Zongsheng/ResShift) ![visitors](https://visitor-badge.laobi.icu/badge?page_id=zsyOAOA/ResShift) 
+<a href="https://colab.research.google.com/drive/1CL8aJO7a_RA4MetanrCLqQO5H7KWO8KI?usp=sharing"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="google colab logo"></a> [![Replicate](https://img.shields.io/badge/Demo-%F0%9F%9A%80%20Replicate-blue)](https://replicate.com/cjwbw/resshift) 
 
 
 :star: If ResShift is helpful to your images or projects, please help star this repo. Thanks! :hugs: 
@@ -18,7 +18,6 @@
 - **2024.09.13**: Our extended journal version has beed accepted by TPAMI@2024. We add the training and testing code for deblurring.
 - **2024.03.11**: Update the code for the Journal paper
 - **2023.12.02**: Add configurations for the x2 super-resolution task.
-- **2023.08.15**: Add [![OpenXLab](https://img.shields.io/badge/Demo-%F0%9F%90%BC%20OpenXLab-blue)](https://openxlab.org.cn/apps/detail/Zongsheng/ResShift).
 - **2023.08.15**: Add Gradio Demo.
 - **2023.08.14**: Add bicubic (matlab resize) model.
 - **2023.08.14**: Add [Project Page](https://zsyoaoa.github.io/projects/resshift/).
