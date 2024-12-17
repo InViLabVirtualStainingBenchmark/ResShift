@@ -4,7 +4,7 @@
 
 [Conference Paper](https://arxiv.org/abs/2307.12348) | [Journal Paper](http://arxiv.org/abs/2403.07319) | [Project Page](https://zsyoaoa.github.io/projects/resshift/) | [Video](https://www.youtube.com/watch?v=8DB-6Xvvl5o)
 
-<a href="https://colab.research.google.com/drive/1CL8aJO7a_RA4MetanrCLqQO5H7KWO8KI?usp=sharing"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="google colab logo"></a> [![Replicate](https://img.shields.io/badge/Demo-%F0%9F%9A%80%20Replicate-blue)](https://replicate.com/cjwbw/resshift) 
+<a href="https://colab.research.google.com/drive/1CL8aJO7a_RA4MetanrCLqQO5H7KWO8KI?usp=sharing"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="google colab logo"></a> [![Replicate](https://img.shields.io/badge/Demo-%F0%9F%9A%80%20Replicate-blue)](https://replicate.com/cjwbw/resshift) ![visitors](https://visitor-badge.laobi.icu/badge?page_id=zsyOAOA/ResShift)
 
 
 :star: If ResShift is helpful to your images or projects, please help star this repo. Thanks! :hugs: 
