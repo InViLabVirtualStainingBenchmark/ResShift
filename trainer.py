@@ -417,19 +417,22 @@ class TrainerBase:
         else:
             pass
 
-    def load_model(self, model, ckpt_path=None):
-        if self.rank == 0:
-            self.logger.info(f'Loading from {ckpt_path}...')
-        ckpt = torch.load(ckpt_path, map_location=f"cuda:{self.rank}")
-        if 'state_dict' in ckpt:
-            ckpt = ckpt['state_dict']
-        util_net.reload_model(model, ckpt)
-        if self.rank == 0:
-            self.logger.info('Loaded Done')
-
     def freeze_model(self, net):
         for params in net.parameters():
             params.requires_grad = False
+
+    def load_model(self, model, ckpt_path=None, tag='model', strict=True):
+        if self.rank == 0:
+            self.logger.info(f'Loading {tag} from {ckpt_path}...')
+        ckpt = torch.load(ckpt_path, map_location=f"cuda:{self.rank}")
+        if 'state_dict' in ckpt:
+            ckpt = ckpt['state_dict']
+        if strict:
+            util_net.reload_model(model, ckpt)
+        else:
+            model.load_state_dict(ckpt, strict=False)
+        if self.rank == 0:
+            self.logger.info('Loaded Done')
 
 class TrainerDifIR(TrainerBase):
     def setup_optimizaton(self):
@@ -454,10 +457,20 @@ class TrainerDifIR(TrainerBase):
             params = self.configs.autoencoder.get('params', dict)
             autoencoder = util_common.get_obj_from_str(self.configs.autoencoder.target)(**params)
             autoencoder.cuda()
-            autoencoder.load_state_dict(ckpt, True)
-            for params in autoencoder.parameters():
-                params.requires_grad_(False)
-            autoencoder.eval()
+            if self.configs.autoencoder.tune_decoder:
+                self.load_model(autoencoder, self.configs.autoencoder.ckpt_path, tag='autoencoder', strict=True)
+                if self.rank == 0:
+                    num_params = 0
+                    for key, value in autoencoder.named_parameters():
+                        if 'decoder' in key or 'post_quant_conv' in key:
+                            num_params += value.numel()
+                        else:
+                            value.requires_grad = False
+                    self.logger.info(f'Finetuning Decoder module: {num_params/10**6:.2f}M...')
+            else:
+                self.load_model(autoencoder, self.configs.autoencoder.ckpt_path, tag='autoencoder', strict=True)
+                self.freeze_model(autoencoder)
+                autoencoder.eval()
             if self.configs.train.compile.flag:
                 if self.rank == 0:
                     self.logger.info("Begin compiling autoencoder model...")
@@ -467,6 +480,9 @@ class TrainerDifIR(TrainerBase):
             self.autoencoder = autoencoder
         else:
             self.autoencoder = None
+
+        if self.configs.autoencoder.params.lora_tune_decoder or self.configs.autoencoder.tune_decoder:
+            self.freeze_model(self.model)
 
         # LPIPS metric
         if hasattr(self.configs, 'lpips'):
@@ -968,17 +984,22 @@ class TrainerDifIRLPIPS(TrainerDifIR):
                     ) # f16
             self.current_x0_pred = x0_pred.detach()
 
-            # classification loss
+            # lpips loss
             losses["lpips"] = self.lpips_loss(
-                    x0_pred.clamp(-1.0, 1.0),
+                    x0_pred,
                     micro_data['gt'],
                     ).to(z0_pred.dtype).view(-1)
             flag_nan = torch.any(torch.isnan(losses["lpips"]))
             if flag_nan:
                 losses["lpips"] = torch.nan_to_num(losses["lpips"], nan=0.0)
-
-            losses["mse"] *= loss_coef[0]
             losses["lpips"] *= loss_coef[1]
+
+            if loss_coef[0] > 0:    # calculate mse in latent space
+                losses["mse"] *= loss_coef[0]
+            else:                   # calculate mse in pixel space
+                assert loss_coef[2] > 0
+                losses["mse"] = mean_flat((x0_pred - micro_data['gt']) ** 2)
+                losses["mse"] *= loss_coef[2]
 
             assert losses["mse"].shape == losses["lpips"].shape
             if flag_nan:
