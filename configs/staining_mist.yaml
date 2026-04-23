@@ -1,0 +1,107 @@
+trainer:
+  target: trainer.TrainerDifIR
+
+model:
+  target: models.unet.UNetModelSwin
+  ckpt_path: ~
+  params:
+    image_size: 64
+    in_channels: 3
+    model_channels: 160
+    out_channels: 3
+    attention_resolutions: [64,32,16,8]
+    dropout: 0
+    channel_mult: [1, 2, 2, 4]
+    num_res_blocks: [2, 2, 2, 2]
+    conv_resample: True
+    dims: 2
+    use_fp16: False
+    num_head_channels: 32
+    use_scale_shift_norm: True
+    resblock_updown: False
+    swin_depth: 2
+    swin_embed_dim: 192
+    window_size: 8
+    mlp_ratio: 4
+    cond_lq: True
+    lq_size: 64
+
+diffusion:
+  target: models.script_util.create_gaussian_diffusion
+  params:
+    sf: 1
+    schedule_name: exponential
+    schedule_kwargs:
+      power: 0.3
+    etas_end: 0.99
+    steps: 15
+    min_noise_level: 0.04
+    kappa: 2.0
+    weighted_mse: False
+    predict_type: xstart
+    timestep_respacing: ~
+    scale_factor: 1.0
+    normalize_input: True
+    latent_flag: True
+
+autoencoder:
+  target: ldm.models.autoencoder.VQModelTorch
+  ckpt_path: weights/autoencoder_vq_f4.pth
+  use_fp16: True
+  tune_decoder: False
+  params:
+    embed_dim: 3
+    n_embed: 8192
+    lora_tune_decoder: False
+    ddconfig:
+      double_z: False
+      z_channels: 3
+      resolution: 256
+      in_channels: 3
+      out_ch: 3
+      ch: 128
+      ch_mult: [1, 2, 4]
+      num_res_blocks: 2
+      attn_resolutions: []
+      dropout: 0.0
+      padding_mode: zeros
+
+data:
+  train:
+    type: paired
+    params:
+      # Update these paths to your specific MIST modality (e.g., Unstained to PR)
+      dir_path: C:/Kdg/year 3/internships/Datasets/MIST/train/Unstained
+      dir_path_extra: C:/Kdg/year 3/internships/Datasets/MIST/train/PR
+      transform_type: rcrop_aug_norm
+      transform_kwargs:
+          mean: 0.5
+          std: 0.5
+          pch_size: 256
+      im_exts: png
+  val:
+    type: paired
+    params:
+      dir_path: C:/Kdg/year 3/internships/Datasets/MIST/val/Unstained
+      dir_path_extra: C:/Kdg/year 3/internships/Datasets/MIST/val/PR
+      transform_type: default
+      transform_kwargs:
+          mean: 0.5
+          std: 0.5
+      im_exts: png
+
+train:
+  lr: 5e-5
+  batch: [1, 1]                # LAPTOP VRAM HACK
+  microbatch: 1                # LAPTOP VRAM HACK
+  num_workers: 0               # Set to 0 on Windows to avoid multiprocessing overhead
+  prefetch_factor: ~
+  iterations: 300000            
+  save_freq: 5000              
+  log_freq: [100, 500, 1]         
+  use_ema_val: True            
+  val_freq: 5000
+  use_amp: True                
+  seed: 123456                 
+  compile:
+    flag: False

@@ -721,9 +721,11 @@ class TrainerDifIR(TrainerBase):
                     w_pad = math.ceil(w / offset) * offset - w
                     padding_mode = self.configs.train.get('val_padding_mode', 'reflect')
                     data[key] = F.pad(value, pad=(0, w_pad, 0, h_pad), mode=padding_mode)
-            return {key:value.cuda().to(dtype=dtype) for key, value in data.items()}
+            data = {key:value.cuda().to(dtype=dtype) for key, value in data.items()}
+            return data
         else:
-            return {key:value.cuda().to(dtype=dtype) for key, value in data.items()}
+            data = {key:value.cuda().to(dtype=dtype) for key, value in data.items()}
+            return data
 
     def backward_step(self, dif_loss_wrapper, micro_data, num_grad_accumulate, tt):
         context = torch.cuda.amp.autocast if self.configs.train.use_amp else nullcontext
@@ -819,7 +821,7 @@ class TrainerDifIR(TrainerBase):
             chn = batch['gt'].shape[1]
             num_timesteps = self.base_diffusion.num_timesteps
             record_steps = [1, (num_timesteps // 2) + 1, num_timesteps]
-            if self.current_iters % self.configs.train.log_freq[0] == 1:
+            if not hasattr(self, 'loss_mean') or self.current_iters % self.configs.train.log_freq[0] == 1:
                 self.loss_mean = {key:torch.zeros(size=(len(record_steps),), dtype=torch.float64)
                                   for key in loss.keys()}
                 self.loss_count = torch.zeros(size=(len(record_steps),), dtype=torch.float64)
@@ -1023,7 +1025,7 @@ class TrainerDifIRLPIPS(TrainerDifIR):
             chn = batch['gt'].shape[1]
             num_timesteps = self.base_diffusion.num_timesteps
             record_steps = [1, (num_timesteps // 2) + 1, num_timesteps]
-            if self.current_iters % self.configs.train.log_freq[0] == 1:
+            if not hasattr(self, 'loss_mean') or self.current_iters % self.configs.train.log_freq[0] == 1:
                 self.loss_mean = {key:torch.zeros(size=(len(record_steps),), dtype=torch.float64)
                                   for key in loss.keys()}
                 self.loss_count = torch.zeros(size=(len(record_steps),), dtype=torch.float64)

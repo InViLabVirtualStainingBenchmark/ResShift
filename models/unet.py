@@ -693,7 +693,10 @@ class UNetModelSwin(nn.Module):
             feature_extractor = []
             feature_chn = 4 if cond_mask else 3
             base_chn = 16
-            for ii in range(int(math.log(lq_size / image_size) / math.log(2))):
+            # Use 256/64 factor logic if sf=1 but image_size is set to latent size
+            # Actually, let's make it robust:
+            num_down = int(math.log(lq_size / image_size) / math.log(2))
+            for ii in range(num_down):
                 feature_extractor.append(nn.Conv2d(feature_chn, base_chn, 3, 1, 1))
                 feature_extractor.append(nn.SiLU())
                 feature_extractor.append(Downsample(base_chn, True, out_channels=base_chn*2))
@@ -879,6 +882,8 @@ class UNetModelSwin(nn.Module):
                 assert self.cond_mask
                 lq = th.cat([lq, mask], dim=1)
             lq = self.feature_extractor(lq.type(self.dtype))
+            if lq.shape[2:] != x.shape[2:]:
+                lq = F.interpolate(lq, size=x.shape[2:], mode='bilinear', align_corners=False)
             x = th.cat([x, lq], dim=1)
 
 

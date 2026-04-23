@@ -92,7 +92,7 @@ def get_transforms(transform_type, kwargs):
                 only_vflip=kwargs.get('only_vflip', False),
                 only_hvflip=kwargs.get('only_hvflip', False),
                 ),
-            util_image.ToTensor(max_value=kwargs.get('max_value')),  # (ndarray, hwc) --> (Tensor, chw)
+            util_image.ToTensor(max_value=kwargs.get('max_value', 255.0)),  # (ndarray, hwc) --> (Tensor, chw)
             thv.transforms.Normalize(mean=kwargs.get('mean', 0.5), std=kwargs.get('std', 0.5)),
         ])
     elif transform_type == 'aug_norm':

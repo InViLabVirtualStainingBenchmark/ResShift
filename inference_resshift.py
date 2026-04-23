@@ -157,16 +157,20 @@ def get_configs(args):
 
     if args.chop_stride < 0:
         if args.chop_size == 512:
-            chop_stride = (512 - 64) * (4 // args.scale)
+            chop_stride = (512 - 64)
         elif args.chop_size == 256:
-            chop_stride = (256 - 32) * (4 // args.scale)
+            chop_stride = (256 - 32)
         elif args.chop_size == 64:
-            chop_stride = (64 - 16) * (4 // args.scale)
+            chop_stride = (64 - 16)
         else:
             raise ValueError("Chop size must be in [512, 256]")
     else:
-        chop_stride = args.chop_stride * (4 // args.scale)
-    args.chop_size *= (4 // args.scale)
+        chop_stride = args.chop_stride
+
+    if args.scale > 1:
+        chop_stride *= (4 // args.scale)
+        args.chop_size *= (4 // args.scale)
+
     print(f"Chopping size/stride: {args.chop_size}/{chop_stride}")
 
     return configs, chop_stride
