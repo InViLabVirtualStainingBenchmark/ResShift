@@ -1,0 +1,24 @@
+--index-url https://download.pytorch.org/whl/cu121
+torch==2.1.2
+torchvision==0.16.2
+torchaudio==2.1.2
+xformers==0.0.23
+gradio==3.50
+scipy==1.9.3
+numpy
+opencv-python
+matplotlib
+timm
+pandas
+pillow
+scikit-learn
+scikit-image
+lpips
+loguru
+omegaconf
+six
+tqdm
+albumentations
+einops
+imageio
+loralib
