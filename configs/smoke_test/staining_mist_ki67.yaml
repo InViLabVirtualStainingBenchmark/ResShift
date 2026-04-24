@@ -24,7 +24,7 @@ model:
     window_size: 8
     mlp_ratio: 4
     cond_lq: True
-    lq_size: 64
+    lq_size: 256
 
 diffusion:
   target: models.script_util.create_gaussian_diffusion
@@ -71,37 +71,48 @@ data:
     type: paired
     params:
       # Update these paths to your specific MIST modality (e.g., Unstained to PR)
-      dir_path: C:/Kdg/year 3/internships/Datasets/MIST/train/Unstained
-      dir_path_extra: C:/Kdg/year 3/internships/Datasets/MIST/train/PR
+      dir_path: datasets/MIST/Ki67/train/Unstained
+      dir_path_extra: datasets/MIST/Ki67/train/Ki67
       transform_type: rcrop_aug_norm
       transform_kwargs:
           mean: 0.5
           std: 0.5
           pch_size: 256
-      im_exts: png
+      im_exts: jpg
   val:
     type: paired
     params:
-      dir_path: C:/Kdg/year 3/internships/Datasets/MIST/val/Unstained
-      dir_path_extra: C:/Kdg/year 3/internships/Datasets/MIST/val/PR
+      dir_path: datasets/MIST/Ki67/val/Unstained
+      dir_path_extra: datasets/MIST/Ki67/val/Ki67
       transform_type: default
       transform_kwargs:
           mean: 0.5
           std: 0.5
-      im_exts: png
+      im_exts: jpg
 
 train:
   lr: 5e-5
+  lr_min: 2e-5
+  lr_schedule: ~
+  warmup_iterations: 10
   batch: [1, 1]                # LAPTOP VRAM HACK
   microbatch: 1                # LAPTOP VRAM HACK
   num_workers: 0               # Set to 0 on Windows to avoid multiprocessing overhead
   prefetch_factor: ~
-  iterations: 300000            
-  save_freq: 5000              
-  log_freq: [100, 500, 1]         
+  weight_decay: 0
+  ema_rate: 0.999
+  iterations: 50
+  save_freq: 25              
+  log_freq: [1, 1, 1]         
   use_ema_val: True            
-  val_freq: 5000
+  val_y_channel: True
+  val_resolution: 256
+  val_padding_mode: reflect
+  val_freq: 25
   use_amp: True                
   seed: 123456                 
+  global_seeding: false
+  local_logging: true
+  tf_logging: false
   compile:
     flag: False

@@ -9,7 +9,7 @@ model:
     in_channels: 3
     model_channels: 160
     out_channels: 3
-    attention_resolutions: [64, 32, 16]
+    attention_resolutions: [64,32,16,8]
     dropout: 0
     channel_mult: [1, 2, 2, 4]
     num_res_blocks: [2, 2, 2, 2]
@@ -70,49 +70,49 @@ data:
   train:
     type: paired
     params:
-      dir_path: datasets/BCI/train/HE
-      dir_path_extra: datasets/BCI/train/IHC
+      # Update these paths to your specific MIST modality (e.g., Unstained to PR)
+      dir_path: datasets/MIST/ER/train/Unstained
+      dir_path_extra: datasets/MIST/ER/train/ER
       transform_type: rcrop_aug_norm
       transform_kwargs:
           mean: 0.5
           std: 0.5
           pch_size: 256
-      im_exts: png
+      im_exts: jpg
   val:
     type: paired
     params:
-      dir_path: datasets/BCI/val/HE
-      dir_path_extra: datasets/BCI/val/IHC
+      dir_path: datasets/MIST/ER/val/Unstained
+      dir_path_extra: datasets/MIST/ER/val/ER
       transform_type: default
       transform_kwargs:
           mean: 0.5
           std: 0.5
-      im_exts: png
+      im_exts: jpg
 
 train:
   lr: 5e-5
   lr_min: 2e-5
   lr_schedule: ~
-  warmup_iterations: 5000
-  batch: [1, 1]                
-  microbatch: 1                
-  num_workers: 4                
-  prefetch_factor: 2            
-  weight_decay: 0               
+  warmup_iterations: 10
+  batch: [1, 1]                # LAPTOP VRAM HACK
+  microbatch: 1                # LAPTOP VRAM HACK
+  num_workers: 0               # Set to 0 on Windows to avoid multiprocessing overhead
+  prefetch_factor: ~
+  weight_decay: 0
   ema_rate: 0.999
-  iterations: 300000
-  save_freq: 5000              
-  log_freq: [100, 500, 1]           
-  local_logging: True           
-  tf_logging: False             
+  iterations: 50
+  save_freq: 25              
+  log_freq: [1, 1, 1]         
   use_ema_val: True            
-  val_freq: 5000
   val_y_channel: True
   val_resolution: 256
   val_padding_mode: reflect
+  val_freq: 25
   use_amp: True                
   seed: 123456                 
-  global_seeding: False
+  global_seeding: false
+  local_logging: true
+  tf_logging: false
   compile:
     flag: False
-    mode: reduce-overhead

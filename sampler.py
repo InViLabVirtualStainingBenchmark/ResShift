@@ -76,7 +76,7 @@ class BaseSampler:
             torch.cuda.set_device(rank)
 
         self.num_gpus = num_gpus
-        self.rank = int(os.environ['LOCAL_RANK']) if num_gpus > 1 else 0
+        self.rank = int(os.environ.get('LOCAL_RANK', 0)) if num_gpus > 1 and 'RANK' in os.environ else 0
 
     def write_log(self, log_str):
         if self.rank == 0:
@@ -275,7 +275,7 @@ class ResShiftSampler(BaseSampler):
             if not out_path.exists():
                 out_path.mkdir(parents=True)
 
-        if self.num_gpus > 1:
+        if self.num_gpus > 1 and dist.is_available() and dist.is_initialized():
             dist.barrier()
 
         if in_path.is_dir():
@@ -332,8 +332,8 @@ class ResShiftSampler(BaseSampler):
                         im_name = Path(micro_data['path'][jj]).stem
                         im_path = out_path / f"{im_name}.png"
                         util_image.imwrite(im_sr, im_path, chn='bgr', dtype_in='uint8')
-            if self.num_gpus > 1:
-                dist.barrier()
+                if self.num_gpus > 1 and dist.is_available() and dist.is_initialized():
+                    dist.barrier()
         else:
             im_lq = util_image.imread(in_path, chn='rgb', dtype='float32')  # h x w x c
             im_lq_tensor = util_image.img2tensor(im_lq).cuda()              # 1 x c x h x w

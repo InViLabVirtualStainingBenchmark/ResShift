@@ -69,7 +69,7 @@ def get_parser(**parser_kwargs):
             "--task",
             type=str,
             default="realsr",
-            choices=['realsr', 'bicsr', 'inpaint_imagenet', 'inpaint_face', 'faceir', 'deblur'],
+            choices=['realsr', 'bicsr', 'inpaint_imagenet', 'inpaint_face', 'faceir', 'deblur', 'staining_bci', 'staining_mist', 'staining_mist_er', 'staining_mist_pr', 'staining_mist_her2', 'staining_mist_ki67'],
             help="Chopping forward.",
             )
     args = parser.parse_args()
@@ -93,6 +93,24 @@ def get_configs(args):
         ckpt_path = ckpt_dir / f'resshift_{args.task}x{args.scale}_s{_STEP[args.version]}_{args.version}.pth'
         vqgan_url = _LINK['vqgan']
         vqgan_path = ckpt_dir / f'autoencoder_vq_f4.pth'
+    elif args.task == 'staining_bci':
+        configs = OmegaConf.load('./configs/staining_bci.yaml')
+        assert args.scale == 1, 'Please set scale equals 1 for virtual staining!'
+        ckpt_path = ckpt_dir / 'resshift_staining_bci.pth'
+        vqgan_url = _LINK['vqgan']
+        vqgan_path = ckpt_dir / f'autoencoder_vq_f4.pth'
+        ckpt_url = None # User provides this or we use a dummy for smoke test
+    elif args.task.startswith('staining_mist'):
+        if args.task == 'staining_mist':
+            configs = OmegaConf.load('./configs/staining_mist_er.yaml') # Default to ER
+        else:
+            modality = args.task.split('_')[-1]
+            configs = OmegaConf.load(f'./configs/staining_mist_{modality}.yaml')
+        assert args.scale == 1, 'Please set scale equals 1 for virtual staining!'
+        ckpt_path = ckpt_dir / 'resshift_staining_mist.pth'
+        vqgan_url = _LINK['vqgan']
+        vqgan_path = ckpt_dir / f'autoencoder_vq_f4.pth'
+        ckpt_url = None
     elif args.task == 'bicsr':
         configs = OmegaConf.load('./configs/bicx4_swinunet_lpips.yaml')
         assert args.scale == 4, 'We only support the 4x super-resolution now!'
@@ -132,7 +150,7 @@ def get_configs(args):
         raise TypeError(f"Unexpected task type: {args.task}!")
 
     # prepare the checkpoint
-    if not ckpt_path.exists():
+    if ckpt_url is not None and not ckpt_path.exists():
          load_file_from_url(
             url=ckpt_url,
             model_dir=ckpt_dir,

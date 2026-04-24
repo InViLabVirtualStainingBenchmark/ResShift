@@ -49,10 +49,10 @@ class TrainerBase:
     def setup_dist(self):
         num_gpus = torch.cuda.device_count()
 
-        if num_gpus > 1:
+        if num_gpus > 1 and 'RANK' in os.environ:
             if mp.get_start_method(allow_none=True) is None:
                 mp.set_start_method('spawn')
-            rank = int(os.environ['LOCAL_RANK'])
+            rank = int(os.environ.get('LOCAL_RANK', 0))
             torch.cuda.set_device(rank % num_gpus)
             dist.init_process_group(
                     timeout=datetime.timedelta(seconds=3600),
@@ -61,7 +61,7 @@ class TrainerBase:
                     )
 
         self.num_gpus = num_gpus
-        self.rank = int(os.environ['LOCAL_RANK']) if num_gpus > 1 else 0
+        self.rank = int(os.environ.get('LOCAL_RANK', 0)) if num_gpus > 1 and 'RANK' in os.environ else 0
 
     def setup_seed(self, seed=None, global_seeding=None):
         if seed is None:

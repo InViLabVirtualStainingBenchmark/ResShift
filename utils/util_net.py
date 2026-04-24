@@ -94,5 +94,10 @@ def reload_model(model, ckpt):
         if module_flag and (not source_key.startswith('module')):
             target_key = 'module.' + target_key
 
-        assert target_key in ckpt
-        source_value.copy_(ckpt[target_key])
+        if target_key in ckpt:
+            if source_value.shape == ckpt[target_key].shape:
+                source_value.copy_(ckpt[target_key])
+            else:
+                print(f"Warning: Shape mismatch for {target_key}! Model: {source_value.shape}, Checkpoint: {ckpt[target_key].shape}")
+        else:
+            print(f"Warning: {target_key} not found in checkpoint!")

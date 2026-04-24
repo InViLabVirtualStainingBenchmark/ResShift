@@ -93,20 +93,20 @@ train:
   lr: 5e-5
   lr_min: 2e-5
   lr_schedule: ~
-  warmup_iterations: 5000
+  warmup_iterations: 10
   batch: [1, 1]                
   microbatch: 1                
-  num_workers: 4                
-  prefetch_factor: 2            
+  num_workers: 0                # Set to 0 for Windows
+  prefetch_factor: ~            # Disable for num_workers=0
   weight_decay: 0               
   ema_rate: 0.999
-  iterations: 300000
-  save_freq: 5000              
-  log_freq: [100, 500, 1]           
+  iterations: 50
+  save_freq: 25              
+  log_freq: [1, 1, 1]           # Fast logging for smoke test
   local_logging: True           
   tf_logging: False             
   use_ema_val: True            
-  val_freq: 5000
+  val_freq: 10000
   val_y_channel: True
   val_resolution: 256
   val_padding_mode: reflect
