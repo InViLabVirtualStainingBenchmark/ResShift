@@ -70,9 +70,8 @@ data:
   train:
     type: paired
     params:
-      # Update these paths to your specific MIST modality (e.g., Unstained to PR)
-      dir_path: datasets/MIST/PR/train/Unstained
-      dir_path_extra: datasets/MIST/PR/train/PR
+      dir_path: "/home/vs_user/Virtual Staining/Datasets/MIST/PR/TrainValAB/trainA"
+      dir_path_extra: "/home/vs_user/Virtual Staining/Datasets/MIST/PR/TrainValAB/trainB"
       transform_type: rcrop_aug_norm
       transform_kwargs:
           mean: 0.5
@@ -82,8 +81,8 @@ data:
   val:
     type: paired
     params:
-      dir_path: datasets/MIST/PR/val/Unstained
-      dir_path_extra: datasets/MIST/PR/val/PR
+      dir_path: "/home/vs_user/Virtual Staining/Datasets/MIST/PR/TrainValAB/valA"
+      dir_path_extra: "/home/vs_user/Virtual Staining/Datasets/MIST/PR/TrainValAB/valB"
       transform_type: default
       transform_kwargs:
           mean: 0.5

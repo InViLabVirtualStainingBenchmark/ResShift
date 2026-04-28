@@ -70,8 +70,8 @@ data:
   train:
     type: paired
     params:
-      dir_path: datasets/BCI/train/HE
-      dir_path_extra: datasets/BCI/train/IHC
+      dir_path: "/home/vs_user/Virtual Staining/Datasets/BCI/HE/train"
+      dir_path_extra: "/home/vs_user/Virtual Staining/Datasets/BCI/IHC/train"
       transform_type: rcrop_aug_norm
       transform_kwargs:
           mean: 0.5
@@ -81,8 +81,8 @@ data:
   val:
     type: paired
     params:
-      dir_path: datasets/BCI/val/HE
-      dir_path_extra: datasets/BCI/val/IHC
+      dir_path: "/home/vs_user/Virtual Staining/Datasets/BCI/HE/test"
+      dir_path_extra: "/home/vs_user/Virtual Staining/Datasets/BCI/IHC/test"
       transform_type: default
       transform_kwargs:
           mean: 0.5

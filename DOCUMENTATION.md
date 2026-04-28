@@ -22,9 +22,9 @@ wget https://github.com/zsyOAOA/ResShift/releases/download/v2.0/autoencoder_vq_f
 ```
 
 ### C. Data Organization
-Ensure your datasets are placed in the `datasets/` root folder:
-- **BCI:** `datasets/BCI/train` and `datasets/BCI/val`
-- **MIST:** `datasets/MIST/[Marker]/train` and `datasets/MIST/[Marker]/val` (Markers: ER, PR, HER2, Ki67)
+The project is configured to point directly to the central source datasets. No local data handling is required.
+- **BCI:** `/home/vs_user/Virtual Staining/Datasets/BCI/HE/train` and `test`
+- **MIST:** `/home/vs_user/Virtual Staining/Datasets/MIST/[Marker]/TrainValAB/trainA` and `valA` (Markers: ER, PR, HER2, Ki67)
 
 ---
 
@@ -80,5 +80,9 @@ CUDA_VISIBLE_DEVICES=0 torchrun --standalone --nproc_per_node=1 main.py --cfg_pa
 
 ### Step 3: Inference (Testing)
 ```bash
-python inference_resshift.py -i datasets/BCI/val/HE -o results/bci_val --task staining_bci --scale 1 --bs 1
+# BCI (H&E to IHC)
+python inference_resshift.py -i "/home/vs_user/Virtual Staining/Datasets/BCI/HE/test" -o results/bci_val --task staining_bci --scale 1 --bs 1
+
+# MIST (Example ER - Replace 'ER' and 'er' as needed)
+python inference_resshift.py -i "/home/vs_user/Virtual Staining/Datasets/MIST/ER/TrainValAB/valA" -o results/mist_er --task staining_mist_er --scale 1 --bs 1
 ```
