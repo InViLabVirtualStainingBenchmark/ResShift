@@ -70,8 +70,8 @@ data:
   train:
     type: paired
     params:
-      dir_path: "/home/vs_user/Virtual Staining/Datasets/MIST/PR/TrainValAB/trainA"
-      dir_path_extra: "/home/vs_user/Virtual Staining/Datasets/MIST/PR/TrainValAB/trainB"
+      dir_path: "/data/MIST/PR/TrainValAB/trainA"
+      dir_path_extra: "/data/MIST/PR/TrainValAB/trainB"
       transform_type: rcrop_aug_norm
       transform_kwargs:
           mean: 0.5
@@ -81,8 +81,8 @@ data:
   val:
     type: paired
     params:
-      dir_path: "/home/vs_user/Virtual Staining/Datasets/MIST/PR/TrainValAB/valA"
-      dir_path_extra: "/home/vs_user/Virtual Staining/Datasets/MIST/PR/TrainValAB/valB"
+      dir_path: "/data/MIST/PR/TrainValAB/valA"
+      dir_path_extra: "/data/MIST/PR/TrainValAB/valB"
       transform_type: default
       transform_kwargs:
           mean: 0.5
@@ -93,11 +93,11 @@ train:
   lr: 5e-5
   lr_min: 2e-5
   lr_schedule: ~
-  warmup_iterations: 30000000
-  batch: [1, 1]                # LAPTOP VRAM HACK
-  microbatch: 1                # LAPTOP VRAM HACK
-  num_workers: 0               # Set to 0 on Windows to avoid multiprocessing overhead
-  prefetch_factor: ~
+  warmup_iterations: 5000
+  batch: [1, 1]
+  microbatch: 1
+  num_workers: 4
+  prefetch_factor: 2
   weight_decay: 0
   ema_rate: 0.999
   iterations: 300000
