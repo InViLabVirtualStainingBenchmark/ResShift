@@ -70,8 +70,8 @@ data:
   train:
     type: paired
     params:
-      dir_path: "/data/MIST/ER/TrainValAB/trainA"
-      dir_path_extra: "/data/MIST/ER/TrainValAB/trainB"
+      dir_path: "/scratch/antwerpen/212/vsc21213/datasets/MIST/ER/TrainValAB/trainA"
+      dir_path_extra: "/scratch/antwerpen/212/vsc21213/datasets/MIST/ER/TrainValAB/trainB"
       transform_type: rcrop_aug_norm
       transform_kwargs:
           mean: 0.5
@@ -81,8 +81,8 @@ data:
   val:
     type: paired
     params:
-      dir_path: "/data/MIST/ER/TrainValAB/valA"
-      dir_path_extra: "/data/MIST/ER/TrainValAB/valB"
+      dir_path: "/scratch/antwerpen/212/vsc21213/datasets/MIST/ER/TrainValAB/valA"
+      dir_path_extra: "/scratch/antwerpen/212/vsc21213/datasets/MIST/ER/TrainValAB/valB"
       transform_type: default
       transform_kwargs:
           mean: 0.5

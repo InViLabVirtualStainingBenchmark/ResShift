@@ -70,8 +70,8 @@ data:
   train:
     type: paired
     params:
-      dir_path: "/data/BCI/HE/train"
-      dir_path_extra: "/data/BCI/IHC/train"
+      dir_path: "/scratch/antwerpen/212/vsc21213/datasets/BCI/HE/train"
+      dir_path_extra: "/scratch/antwerpen/212/vsc21213/datasets/BCI/IHC/train"
       transform_type: rcrop_aug_norm
       transform_kwargs:
           mean: 0.5
@@ -81,8 +81,8 @@ data:
   val:
     type: paired
     params:
-      dir_path: "/data/BCI/HE/test"
-      dir_path_extra: "/data/BCI/IHC/test"
+      dir_path: "/scratch/antwerpen/212/vsc21213/datasets/BCI/HE/test"
+      dir_path_extra: "/scratch/antwerpen/212/vsc21213/datasets/BCI/IHC/test"
       transform_type: default
       transform_kwargs:
           mean: 0.5
