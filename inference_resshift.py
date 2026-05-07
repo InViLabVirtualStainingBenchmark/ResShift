@@ -165,7 +165,8 @@ def get_configs(args):
             file_name=vqgan_path.name,
             )
 
-    configs.model.ckpt_path = str(ckpt_path)
+    if configs.model.ckpt_path is None:
+        configs.model.ckpt_path = str(ckpt_path)
     configs.diffusion.params.sf = args.scale
     configs.autoencoder.ckpt_path = str(vqgan_path)
 

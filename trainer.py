@@ -238,13 +238,29 @@ class TrainerBase:
             while True: yield from loader
 
         # make datasets
-        datasets = {'train': create_dataset(self.configs.data.get('train', dict)), }
-        if hasattr(self.configs.data, 'val') and self.rank == 0:
-            datasets['val'] = create_dataset(self.configs.data.get('val', dict))
+        full_train = create_dataset(self.configs.data.get('train', dict))
+        val_split = self.configs.data.get('val_split', 0)
+
+        if val_split > 0:
+            # Internal split: 90% train, val_split% val — same seed on all ranks for consistency
+            total = len(full_train)
+            val_size = int(total * val_split)
+            train_size = total - val_size
+            generator = torch.Generator().manual_seed(self.configs.train.get('seed', 42))
+            train_dataset, val_dataset = udata.random_split(full_train, [train_size, val_size], generator=generator)
+            datasets = {'train': train_dataset}
+            if self.rank == 0:
+                datasets['val'] = val_dataset
+                self.logger.info('Internal val split: {:d} train / {:d} val ({:.0f}%)'.format(
+                    train_size, val_size, val_split * 100))
+        else:
+            datasets = {'train': full_train}
+            if hasattr(self.configs.data, 'val') and self.rank == 0:
+                datasets['val'] = create_dataset(self.configs.data.get('val', dict))
+
         if self.rank == 0:
             for phase in datasets.keys():
-                length = len(datasets[phase])
-                self.logger.info('Number of images in {:s} data set: {:d}'.format(phase, length))
+                self.logger.info('Number of images in {:s} data set: {:d}'.format(phase, len(datasets[phase])))
 
         # make dataloaders
         if self.num_gpus > 1:
@@ -266,7 +282,7 @@ class TrainerBase:
                         worker_init_fn=my_worker_init_fn,
                         sampler=sampler,
                         ))}
-        if hasattr(self.configs.data, 'val') and self.rank == 0:
+        if 'val' in datasets and self.rank == 0:
             dataloaders['val'] = udata.DataLoader(datasets['val'],
                                                   batch_size=self.configs.train.batch[1],
                                                   shuffle=False,
@@ -305,6 +321,7 @@ class TrainerBase:
         self.build_dataloader()  # prepare data: self.dataloaders, self.datasets, self.sampler
 
         self.model.train()
+        self.best_metric = -float('inf')  # PSNR, higher is better
         num_iters_epoch = math.ceil(len(self.datasets['train']) / self.configs.train.batch[0])
         for ii in range(self.iters_start, self.configs.train.iterations):
             self.current_iters = ii + 1
@@ -317,19 +334,21 @@ class TrainerBase:
 
             # validation phase
             if 'val' in self.dataloaders and (ii+1) % self.configs.train.get('val_freq', 10000) == 0:
-                self.validation()
+                val_psnr = self.validation()
+                if val_psnr is not None and val_psnr > self.best_metric:
+                    self.best_metric = val_psnr
+                    self.logger.info(f'New best PSNR {val_psnr:.4f} at iter {self.current_iters}, saving best checkpoint.')
+                    self.save_ckpt(tag='best')
 
             #update learning rate
             self.adjust_lr()
 
-            # save checkpoint
-            if (ii+1) % self.configs.train.save_freq == 0:
-                self.save_ckpt()
-
             if (ii+1) % num_iters_epoch == 0 and self.sampler is not None:
                 self.sampler.set_epoch(ii+1)
 
-        # close the tensorboard
+        # save last checkpoint and close logger
+        self.logger.info('Training complete. Saving last checkpoint.')
+        self.save_ckpt(tag='last')
         self.close_logger()
 
     def training_step(self, data):
@@ -339,9 +358,9 @@ class TrainerBase:
         assert hasattr(self, 'lr_scheduler')
         self.lr_scheduler.step()
 
-    def save_ckpt(self):
+    def save_ckpt(self, tag='last'):
         if self.rank == 0:
-            ckpt_path = self.ckpt_dir / 'model_{:d}.pth'.format(self.current_iters)
+            ckpt_path = self.ckpt_dir / f'model_{tag}.pth'
             ckpt = {
                     'iters_start': self.current_iters,
                     'log_step': {phase:self.log_step[phase] for phase in ['train', 'val']},
@@ -352,7 +371,7 @@ class TrainerBase:
                 ckpt['amp_scaler'] = self.amp_scaler.state_dict()
             torch.save(ckpt, ckpt_path)
             if hasattr(self, 'ema_rate'):
-                ema_ckpt_path = self.ema_ckpt_dir / 'ema_model_{:d}.pth'.format(self.current_iters)
+                ema_ckpt_path = self.ema_ckpt_dir / f'ema_model_{tag}.pth'
                 torch.save(self.ema_state, ema_ckpt_path)
 
     def reload_ema_model(self):
@@ -972,6 +991,8 @@ class TrainerDifIR(TrainerBase):
 
             if not (self.configs.train.use_ema_val and hasattr(self.configs.train, 'ema_rate')):
                 self.model.train()
+
+            return mean_psnr if 'gt' in data else None
 
 class TrainerDifIRLPIPS(TrainerDifIR):
     def backward_step(self, dif_loss_wrapper, micro_data, num_grad_accumulate, tt):

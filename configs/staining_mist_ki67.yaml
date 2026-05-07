@@ -78,16 +78,7 @@ data:
           std: 0.5
           pch_size: 256
       im_exts: jpg
-  val:
-    type: paired
-    params:
-      dir_path: "/scratch/antwerpen/212/vsc21213/datasets/MIST/Ki67/TrainValAB/valA"
-      dir_path_extra: "/scratch/antwerpen/212/vsc21213/datasets/MIST/Ki67/TrainValAB/valB"
-      transform_type: default
-      transform_kwargs:
-          mean: 0.5
-          std: 0.5
-      im_exts: jpg
+  val_split: 0.1
 
 train:
   lr: 5e-5
@@ -100,8 +91,8 @@ train:
   prefetch_factor: 2
   weight_decay: 0
   ema_rate: 0.999
-  iterations: 1000
-  save_freq: 500
+  iterations: 300000
+  save_freq: 150000
   log_freq: [100, 500, 1]         
   use_ema_val: True            
   val_y_channel: True
