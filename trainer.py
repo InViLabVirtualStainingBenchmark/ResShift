@@ -567,7 +567,8 @@ class TrainerDifIR(TrainerBase):
     @torch.no_grad()
     def prepare_data(self, data, dtype=torch.float32, realesrgan=None, phase='train'):
         if realesrgan is None:
-            realesrgan = self.configs.data.get(phase, dict).type == 'realesrgan'
+            data_cfg = self.configs.data.get(phase, None)
+            realesrgan = data_cfg is not None and getattr(data_cfg, 'type', None) == 'realesrgan'
         if realesrgan and phase == 'train':
             if not hasattr(self, 'jpeger'):
                 self.jpeger = DiffJPEG(differentiable=False).cuda()  # simulate JPEG compression artifacts
@@ -869,7 +870,7 @@ class TrainerDifIR(TrainerBase):
                 log_str += 'lr:{:.2e}'.format(self.optimizer.param_groups[0]['lr'])
                 self.logger.info(log_str)
                 self.logging_metric(self.loss_mean, tag='Loss', phase=phase, add_global_step=True)
-            if self.current_iters % self.configs.train.log_freq[1] == 0:
+            if self.configs.train.log_freq[1] > 0 and self.current_iters % self.configs.train.log_freq[1] == 0:
                 self.logging_image(batch['lq'], tag='lq', phase=phase, add_global_step=False)
                 self.logging_image(batch['gt'], tag='gt', phase=phase, add_global_step=False)
                 x_t = self.base_diffusion.decode_first_stage(

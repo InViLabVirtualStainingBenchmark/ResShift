@@ -9,7 +9,7 @@ model:
     in_channels: 3
     model_channels: 160
     out_channels: 3
-    attention_resolutions: [64, 32, 16]
+    attention_resolutions: [64, 32, 16, 8]
     dropout: 0
     channel_mult: [1, 2, 2, 4]
     num_res_blocks: [2, 2, 2, 2]
@@ -83,17 +83,17 @@ data:
 train:
   lr: 5e-5
   lr_min: 2e-5
-  lr_schedule: ~
+  lr_schedule: cosin
   warmup_iterations: 5000
-  batch: [1, 1]                
-  microbatch: 1                
-  num_workers: 4                
+  batch: [64, 4]                
+  microbatch: 8                
+  num_workers: 8                
   prefetch_factor: 2            
   weight_decay: 0               
   ema_rate: 0.999
   iterations: 300000
-  save_freq: 150000
-  log_freq: [100, 500, 1]           
+  save_freq: 10000
+  log_freq: [100, 0, 1]           
   local_logging: True           
   tf_logging: False             
   use_ema_val: True            
