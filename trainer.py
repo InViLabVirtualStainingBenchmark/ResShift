@@ -894,6 +894,9 @@ class TrainerDifIR(TrainerBase):
 
     def validation(self, phase='val'):
         if self.rank == 0:
+            # Reset validation image counter so we overwrite images from previous validation runs
+            self.log_step_img[phase] = 1
+            
             if self.configs.train.use_ema_val:
                 self.reload_ema_model()
                 self.ema_model.eval()
