@@ -334,11 +334,28 @@ class TrainerBase:
 
             # validation phase
             if 'val' in self.dataloaders and (ii+1) % self.configs.train.get('val_freq', 10000) == 0:
-                val_psnr = self.validation()
+                val_psnr, last_batch_visuals = self.validation()
+                
+                # ALWAYS save a rolling checkpoint so we can resume if the job times out
+                self.save_ckpt(tag='latest')
+
                 if val_psnr is not None and val_psnr > self.best_metric:
                     self.best_metric = val_psnr
                     self.logger.info(f'New best PSNR {val_psnr:.4f} at iter {self.current_iters}, saving best checkpoint.')
                     self.save_ckpt(tag='best')
+                    
+                    # Log images ONLY when we have a new best model to save storage
+                    if last_batch_visuals is not None:
+                        self.logging_image(
+                            last_batch_visuals['im_sr_all'],
+                            tag='progress',
+                            phase='val',
+                            add_global_step=False,
+                            nrow=last_batch_visuals['nrow'],
+                        )
+                        if last_batch_visuals['im_gt'] is not None:
+                            self.logging_image(last_batch_visuals['im_gt'], tag='gt', phase='val', add_global_step=False)
+                        self.logging_image(last_batch_visuals['im_lq'], tag='lq', phase='val', add_global_step=True)
 
             #update learning rate
             self.adjust_lr()
@@ -915,6 +932,10 @@ class TrainerDifIR(TrainerBase):
             batch_size = self.configs.train.batch[1]
             num_iters_epoch = math.ceil(len(self.datasets[phase]) / batch_size)
             mean_psnr = mean_lpips = 0
+            
+            # Cache the last batch's data for potential logging if PSNR improves
+            last_batch_visuals = None
+
             for ii, data in enumerate(self.dataloaders[phase]):
                 data = self.prepare_data(data, phase='val')
                 if 'gt' in data:
@@ -971,18 +992,15 @@ class TrainerDifIR(TrainerBase):
 
                 if (ii + 1) % self.configs.train.log_freq[2] == 0:
                     self.logger.info(f'Validation: {ii+1:02d}/{num_iters_epoch:02d}...')
-
-                    im_sr_all = rearrange(im_sr_all, 'b (k c) h w -> (b k) c h w', c=im_lq.shape[1])
-                    self.logging_image(
-                            im_sr_all,
-                            tag='progress',
-                            phase=phase,
-                            add_global_step=False,
-                            nrow=len(indices),
-                            )
-                    if 'gt' in data:
-                        self.logging_image(im_gt, tag='gt', phase=phase, add_global_step=False)
-                    self.logging_image(im_lq, tag='lq', phase=phase, add_global_step=True)
+                    
+                    # Store current batch visuals in case we decide to log them later
+                    im_sr_all_processed = rearrange(im_sr_all, 'b (k c) h w -> (b k) c h w', c=im_lq.shape[1])
+                    last_batch_visuals = {
+                        'im_sr_all': im_sr_all_processed,
+                        'im_gt': im_gt if 'gt' in data else None,
+                        'im_lq': im_lq,
+                        'nrow': len(indices)
+                    }
 
             if 'gt' in data:
                 mean_psnr /= len(self.datasets[phase])
@@ -996,7 +1014,7 @@ class TrainerDifIR(TrainerBase):
             if not (self.configs.train.use_ema_val and hasattr(self.configs.train, 'ema_rate')):
                 self.model.train()
 
-            return mean_psnr if 'gt' in data else None
+            return (mean_psnr, last_batch_visuals) if 'gt' in data else (None, None)
 
 class TrainerDifIRLPIPS(TrainerDifIR):
     def backward_step(self, dif_loss_wrapper, micro_data, num_grad_accumulate, tt):

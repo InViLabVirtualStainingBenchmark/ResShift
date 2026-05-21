@@ -29,6 +29,14 @@ module load calcua/2025a
 echo "Starting ResShift BCI Training on HPC..."
 echo "Job ID: $SLURM_JOB_ID"
 
+if [ -n "${RESUME_CKPT:-}" ]; then
+    echo "Resuming from : $RESUME_CKPT"
+    RESUME_FLAG="--resume $RESUME_CKPT"
+else
+    echo "Starting fresh training."
+    RESUME_FLAG=""
+fi
+
 nvidia-smi --query-gpu=timestamp,index,utilization.gpu,utilization.memory,memory.used,memory.total \
            --format=csv -l 5 > "$VSC_DATA/projects/resshift/logs/gpu_bci_${SLURM_JOB_ID}.csv" &
 GPU_LOG_PID=$!
@@ -39,7 +47,8 @@ srun apptainer exec --nv \
     "$CONTAINER" \
     bash -c "cd $VSC_REPO && python main.py \
         --cfg_path configs/staining_bci.yaml \
-        --save_dir $SAVE_DIR"
+        --save_dir $SAVE_DIR \
+        $RESUME_FLAG"
 
 kill $GPU_LOG_PID 2>/dev/null || true
 
