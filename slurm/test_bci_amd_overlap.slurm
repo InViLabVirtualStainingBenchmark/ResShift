@@ -45,7 +45,7 @@ srun apptainer exec \
     "$CONTAINER" \
     bash -c "ls $DATA_DIR/HE/test/*.png | head -n 30 | xargs -I {} cp {} $TEMP_IN_DIR/"
 
-echo "30 images copied. Running inference with --chop_stride 256 (50% overlap)..."
+echo "30 images copied. Running inference with --chop_stride 448 (64px overlap + Gaussian Blending)..."
 
 # Run inference ONLY on the temporary folder containing the 30 images
 srun apptainer exec --rocm \
@@ -57,7 +57,7 @@ srun apptainer exec --rocm \
         --task staining_bci \
         --scale 1 \
         --chop_size 512 \
-        --chop_stride 256 \
+        --chop_stride 448 \
         -i $TEMP_IN_DIR \
         -o $INFER_OUT"
 
