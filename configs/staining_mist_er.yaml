@@ -3,7 +3,7 @@ trainer:
 
 model:
   target: models.unet.UNetModelSwin
-  ckpt_path: ~
+  ckpt_path: "/data/antwerpen/212/vsc21213/projects/resshift/outputs/experiments/mist_er/2026-05-25-11-35/ema_ckpts/ema_model_best.pth"
   params:
     image_size: 64
     in_channels: 3
