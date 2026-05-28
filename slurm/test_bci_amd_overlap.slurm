@@ -20,7 +20,7 @@ export DATA_SQSH="$VSC_SCRATCH/datasets/BCI_dataset.sqsh"
 export DATA_DIR="$VSC_SCRATCH/datasets/BCI"
 
 # Save the test results in a specific subfolder so it doesn't overwrite your main inference
-export INFER_OUT="/scratch/antwerpen/grp/ap_invilab_td_thesis/diffusion-predictions/ResShift/BCI_Overlap_Test"
+export INFER_OUT="/scratch/antwerpen/grp/ap_invilab_td_thesis/diffusion-predictions/ResShift/BCI_TEST"
 
 # MIOPEN cache redirection for AMD GPUs
 export MIOPEN_USER_DB_PATH=/tmp/miopen_$SLURM_JOB_ID
