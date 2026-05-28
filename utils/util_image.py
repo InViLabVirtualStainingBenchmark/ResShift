@@ -918,6 +918,12 @@ class ImageSpliterTh:
         self.im_res = torch.zeros([bs, chn, height*sf, width*sf], dtype=im.dtype, device=im.device)
         self.pixel_count = torch.zeros([bs, chn, height*sf, width*sf], dtype=im.dtype, device=im.device)
 
+        # Create 2D blending mask (Hann Window) to feather patch edges and eliminate seams
+        out_size = pch_size * sf
+        window_1d = torch.hann_window(out_size, periodic=False, dtype=im.dtype, device=im.device)
+        window_1d = window_1d.clamp(min=1e-6) # Prevent division by zero later
+        self.mask = (window_1d.unsqueeze(1) * window_1d.unsqueeze(0)).unsqueeze(0).unsqueeze(0) # shape: 1 x 1 x out_size x out_size
+
     def extract_starts(self, length):
         if length <= self.pch_size:
             starts = [0,]
@@ -971,8 +977,11 @@ class ImageSpliterTh:
         assert len(pch_list) == len(index_infos)
         for ii, (h_start, h_end, w_start, w_end) in enumerate(index_infos):
             current_pch = pch_list[ii]
-            self.im_res[:, :, h_start:h_end, w_start:w_end] +=  current_pch
-            self.pixel_count[:, :, h_start:h_end, w_start:w_end] += 1
+            # Multiply predicted patch by the blending mask
+            weighted_pch = current_pch * self.mask
+            self.im_res[:, :, h_start:h_end, w_start:w_end] += weighted_pch
+            # Add mask to the accumulator for weighted averaging
+            self.pixel_count[:, :, h_start:h_end, w_start:w_end] += self.mask
 
     def gather(self):
         assert torch.all(self.pixel_count != 0)
