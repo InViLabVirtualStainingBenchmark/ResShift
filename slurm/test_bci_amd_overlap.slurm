@@ -27,27 +27,27 @@ export MIOPEN_USER_DB_PATH=/tmp/miopen_$SLURM_JOB_ID
 export MIOPEN_CUSTOM_CACHE_DIR=/tmp/miopen_$SLURM_JOB_ID
 mkdir -p $MIOPEN_USER_DB_PATH
 
-# Create a temporary directory on the compute node just for these 10 images
-export TEMP_IN_DIR="/tmp/bci_test_10_$SLURM_JOB_ID"
+# Create a temporary directory on the compute node just for these 30 images
+export TEMP_IN_DIR="/tmp/bci_test_30_$SLURM_JOB_ID"
 mkdir -p "$TEMP_IN_DIR"
 mkdir -p "$INFER_OUT"
 
 module purge
 module load calcua/2025a
 
-echo "Extracting exactly 10 images from the SquashFS dataset for testing..."
+echo "Extracting exactly 30 images from the SquashFS dataset for testing..."
 unset SLURM_CPUS_PER_TASK
 
-# Use the container to mount the dataset and copy exactly 10 images to our temp folder
+# Use the container to mount the dataset and copy exactly 30 images to our temp folder
 srun apptainer exec \
     -B "$DATA_SQSH:$DATA_DIR:image-src=/" \
     -B "/tmp:/tmp" \
     "$CONTAINER" \
-    bash -c "ls $DATA_DIR/HE/test/*.png | head -n 10 | xargs -I {} cp {} $TEMP_IN_DIR/"
+    bash -c "ls $DATA_DIR/HE/test/*.png | head -n 30 | xargs -I {} cp {} $TEMP_IN_DIR/"
 
-echo "10 images copied. Running inference with --chop_stride 256 (50% overlap)..."
+echo "30 images copied. Running inference with --chop_stride 256 (50% overlap)..."
 
-# Run inference ONLY on the temporary folder containing the 10 images
+# Run inference ONLY on the temporary folder containing the 30 images
 srun apptainer exec --rocm \
     -B "/tmp:/tmp" \
     -B "$VSC_DATA:$VSC_DATA" \
@@ -65,4 +65,4 @@ srun apptainer exec --rocm \
 rm -rf $MIOPEN_USER_DB_PATH
 rm -rf $TEMP_IN_DIR
 
-echo "Test complete! You can view the 10 results at: $INFER_OUT"
+echo "Test complete! You can view the 30 results at: $INFER_OUT"
