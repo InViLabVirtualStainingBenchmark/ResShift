@@ -36,7 +36,7 @@ if [ "$STAIN" == "ER" ]; then
 elif [ "$STAIN" == "PR" ]; then
     export SAVE_DIR="$VSC_DATA/projects/resshift/outputs/experiments/mist_pr/2026-05-25-11-56"
 elif [ "$STAIN" == "KI67" ]; then
-    export SAVE_DIR="$VSC_DATA/projects/resshift/outputs/experiments/mist_he/2026-05-26-01-20"
+    export SAVE_DIR="$VSC_DATA/projects/resshift/outputs/experiments/mist_ki67/2026-05-26-01-20"
 else
     export SAVE_DIR="$VSC_DATA/projects/resshift/outputs/experiments/mist_${STAIN_LOWER}"
 fi
