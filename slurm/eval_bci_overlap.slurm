@@ -29,21 +29,33 @@ module load calcua/2025a
 echo "Starting BCI Overlap (Gaussian Blending) Evaluation on AMD..."
 mkdir -p "$DATA_DIR"
 
-# Note: We use --match_by stem because the PRED_DIR only contains 30 images,
-# while the GT folder contains all 977. Using 'stem' ensures evaluate.py 
-# only compares the 30 predictions against their exact matching GTs.
+export TEMP_GT_DIR="/tmp/BCI_eval_overlap_GT_30"
+mkdir -p "$TEMP_GT_DIR"
+
+# Copy ONLY the GT images that match the 30 predicted images
+echo "Isolating the 30 matching Ground Truth images..."
+srun apptainer exec \
+    -B "$DATA_SQSH:$DATA_DIR:image-src=/" \
+    -B "/tmp:/tmp" \
+    -B "/scratch/antwerpen/grp/ap_invilab_td_thesis:/scratch/antwerpen/grp/ap_invilab_td_thesis" \
+    "$CONTAINER" \
+    bash -c "for file in $PRED_DIR/*.png; do cp \"$DATA_DIR/IHC/test/\$(basename \"\$file\")\" $TEMP_GT_DIR/ 2>/dev/null || true; done"
+
+
 srun apptainer exec --rocm \
     -B "$DATA_SQSH:$DATA_DIR:image-src=/" \
     -B "$VSC_DATA:$VSC_DATA" \
+    -B "/tmp:/tmp" \
     -B "/scratch/antwerpen/grp/ap_invilab_td_thesis:/scratch/antwerpen/grp/ap_invilab_td_thesis" \
     "$CONTAINER" \
     bash -c "cd $EVAL_REPO && python evaluate.py \
         --pred $PRED_DIR \
-        --gt $DATA_DIR/IHC/test \
+        --gt $TEMP_GT_DIR \
         --model_name resshift_bci_gaussian_fix \
         --dataset_name bci_30_subset \
         --split_name test \
         --match_by stem \
         --output $OUTPUT_CSV"
 
+rm -rf $TEMP_GT_DIR
 echo "BCI Overlap Evaluation Complete."
