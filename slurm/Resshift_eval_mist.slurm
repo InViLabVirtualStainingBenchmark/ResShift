@@ -62,8 +62,6 @@ srun apptainer exec --rocm \
         --model_name resshift_mist_${STAIN_LOWER} \
         --dataset_name mist \
         --split_name test \
-        --cellpose \
-        --cellpose_model $CP_MODEL \
         --output $OUTPUT_CSV"
 
 echo "MIST ($STAIN) Evaluation Complete."

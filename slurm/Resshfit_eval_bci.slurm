@@ -40,8 +40,6 @@ srun apptainer exec --rocm \
         --model_name resshift_bci \
         --dataset_name bci \
         --split_name test \
-        --cellpose \
-        --cellpose_model cyto2 \
         --output $OUTPUT_CSV"
 
 echo "BCI Evaluation Complete."
