@@ -30,17 +30,6 @@ export DATA_DIR="$VSC_SCRATCH/datasets/MIST"
 export INFER_OUT="/scratch/antwerpen/grp/ap_invilab_td_thesis/diffusion-predictions/ResShift/MIST_${STAIN}"
 export EVAL_RESULTS="$VSC_DATA/projects/resshift/outputs/eval_results.csv"
 
-# Set SAVE_DIR based on the specific timestamped folder provided by the user
-if [ "$STAIN" == "ER" ]; then
-    export SAVE_DIR="$VSC_DATA/projects/resshift/outputs/experiments/mist_er/2026-05-25-11-35"
-elif [ "$STAIN" == "PR" ]; then
-    export SAVE_DIR="$VSC_DATA/projects/resshift/outputs/experiments/mist_pr/2026-05-25-11-56"
-elif [ "$STAIN" == "KI67" ]; then
-    export SAVE_DIR="$VSC_DATA/projects/resshift/outputs/experiments/mist_ki67/2026-05-26-01-20"
-else
-    export SAVE_DIR="$VSC_DATA/projects/resshift/outputs/experiments/mist_${STAIN_LOWER}"
-fi
-
 # MIOPEN cache redirection
 export MIOPEN_USER_DB_PATH=/tmp/miopen_$SLURM_JOB_ID
 export MIOPEN_CUSTOM_CACHE_DIR=/tmp/miopen_$SLURM_JOB_ID
