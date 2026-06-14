@@ -1,0 +1,52 @@
+Bootstrap: docker
+# Use the proven CalcUA/Arcturus compatible ROCm base
+From: rocm/pytorch:rocm7.0.2_ubuntu24.04_py3.12_pytorch_release_2.9.1
+
+%post
+    # Basic system dependencies
+    apt-get update -y && \
+    apt-get install -y git && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+    # Set up pip and ROCm index priority
+    export PIP_EXTRA_INDEX_URL=https://download.pytorch.org/whl/rocm7.0
+    python3 -m pip install --no-cache-dir --upgrade pip setuptools wheel
+
+    # Install evaluation dependencies
+    # We DO NOT install torch or torchvision here to protect the ROCm versions in the base image.
+    python3 -m pip install --no-cache-dir \
+        "numpy>=1.26.0,<2.0.0" \
+        "scipy" \
+        "matplotlib" \
+        "pillow"
+
+    # Install the specific metrics libraries
+    # Cellpose often pulls in OpenCV and PyQt, which can cause headless issues on clusters,
+    # but we will install it carefully alongside opencv-python-headless
+    python3 -m pip install --no-cache-dir \
+        "opencv-python-headless" \
+        "torchmetrics" \
+        "torch-fidelity" \
+        "lpips" \
+        "cellpose"
+
+    # VERIFICATION GATE
+    # Ensures that the metrics libraries load and ROCm vision operators are intact
+    echo "Verifying Evaluate ROCm environment integrity..."
+    python3 -c "import torch; import torchvision; from torchvision.ops import nms; print('SUCCESS: Vision operators functional.')"
+    python3 -c "import torchmetrics; import lpips; import cellpose; print('SUCCESS: All Evaluate dependencies functional.')"
+
+%environment
+    export PYTHONUNBUFFERED=1
+    # Give MIOpen a writable directory for kernel tuning cache for AMD GPUs
+    export MIOPEN_USER_DB_PATH=/tmp/miopen
+    export MIOPEN_CUSTOM_CACHE_DIR=/tmp/miopen
+    # Disable Cellpose GUI elements that can crash headless clusters
+    export CELLPOSE_LOCAL=1
+
+%help
+    Evaluate AMD Container (ROCm 7.0.2).
+    Contains evaluate.py dependencies: torch, torchmetrics, lpips, torch-fidelity, cellpose.
+    Validated for NumPy 1.x compatibility and Torchvision NMS operators.
+    Usage: apptainer exec --rocm evaluate_amd.sif python evaluate.py ...

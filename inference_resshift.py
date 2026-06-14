@@ -208,6 +208,7 @@ def main():
             use_amp=True,
             seed=args.seed,
             padding_offset=configs.model.params.get('lq_size', 64),
+            blend_mode=args.blend_mode,
             )
 
     # setting mask path for inpainting

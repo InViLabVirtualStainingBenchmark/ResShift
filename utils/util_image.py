@@ -887,7 +887,7 @@ class ImageSpliterNp:
         return self.im_res / self.pixel_count
 
 class ImageSpliterTh:
-    def __init__(self, im, pch_size, stride, sf=1, extra_bs=1):
+    def __init__(self, im, pch_size, stride, sf=1, extra_bs=1, blend_mode='box'):
         '''
         Input:
             im: n x c x h x w, torch tensor, float, low-resolution image in SR
@@ -900,6 +900,7 @@ class ImageSpliterTh:
         self.pch_size = pch_size
         self.sf = sf
         self.extra_bs = extra_bs
+        self.blend_mode = blend_mode
 
         bs, chn, height, width= im.shape
         self.true_bs = bs
@@ -918,11 +919,14 @@ class ImageSpliterTh:
         self.im_res = torch.zeros([bs, chn, height*sf, width*sf], dtype=im.dtype, device=im.device)
         self.pixel_count = torch.zeros([bs, chn, height*sf, width*sf], dtype=im.dtype, device=im.device)
 
-        # Create 2D blending mask (Hann Window) to feather patch edges and eliminate seams
-        out_size = pch_size * sf
-        window_1d = torch.hann_window(out_size, periodic=False, dtype=im.dtype, device=im.device)
-        window_1d = window_1d.clamp(min=1e-6) # Prevent division by zero later
-        self.mask = (window_1d.unsqueeze(1) * window_1d.unsqueeze(0)).unsqueeze(0).unsqueeze(0) # shape: 1 x 1 x out_size x out_size
+        if self.blend_mode == 'gaussian':
+            # Create 2D blending mask (Hann Window) to feather patch edges and eliminate seams
+            out_size = pch_size * sf
+            window_1d = torch.hann_window(out_size, periodic=False, dtype=im.dtype, device=im.device)
+            window_1d = window_1d.clamp(min=1e-6) # Prevent division by zero later
+            self.mask = (window_1d.unsqueeze(1) * window_1d.unsqueeze(0)).unsqueeze(0).unsqueeze(0) # shape: 1 x 1 x out_size x out_size
+        else:
+            self.mask = None
 
     def extract_starts(self, length):
         if length <= self.pch_size:
@@ -977,11 +981,16 @@ class ImageSpliterTh:
         assert len(pch_list) == len(index_infos)
         for ii, (h_start, h_end, w_start, w_end) in enumerate(index_infos):
             current_pch = pch_list[ii]
-            # Multiply predicted patch by the blending mask
-            weighted_pch = current_pch * self.mask
-            self.im_res[:, :, h_start:h_end, w_start:w_end] += weighted_pch
-            # Add mask to the accumulator for weighted averaging
-            self.pixel_count[:, :, h_start:h_end, w_start:w_end] += self.mask
+            if self.blend_mode == 'gaussian':
+                # Multiply predicted patch by the blending mask
+                weighted_pch = current_pch * self.mask
+                self.im_res[:, :, h_start:h_end, w_start:w_end] += weighted_pch
+                # Add mask to the accumulator for weighted averaging
+                self.pixel_count[:, :, h_start:h_end, w_start:w_end] += self.mask
+            else:
+                # Standard box average
+                self.im_res[:, :, h_start:h_end, w_start:w_end] += current_pch
+                self.pixel_count[:, :, h_start:h_end, w_start:w_end] += 1
 
     def gather(self):
         assert torch.all(self.pixel_count != 0)

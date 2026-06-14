@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=bci_overlap_full
+#SBATCH --job-name=bci_overlap_amd
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=16
@@ -8,8 +8,8 @@
 #SBATCH -A ap_invilab_td_thesis
 #SBATCH -p arcturus_gpu
 #SBATCH --gres=gpu:1
-#SBATCH -o /data/antwerpen/212/vsc21213/projects/resshift/logs/test_bci_overlap.%j.out
-#SBATCH -e /data/antwerpen/212/vsc21213/projects/resshift/logs/test_bci_overlap.%j.err
+#SBATCH -o /data/antwerpen/212/vsc21213/projects/resshift/logs/test_bci_seamless_amd.%j.out
+#SBATCH -e /data/antwerpen/212/vsc21213/projects/resshift/logs/test_bci_seamless_amd.%j.err
 
 set -euo pipefail
 
@@ -46,6 +46,7 @@ srun apptainer exec --rocm \
         --scale 1 \
         --chop_size 512 \
         --chop_stride 448 \
+        --blend_mode gaussian \
         -i $DATA_DIR/HE/test \
         -o $INFER_OUT"
 

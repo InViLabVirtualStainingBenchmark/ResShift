@@ -15,7 +15,7 @@ set -euo pipefail
 
 export PROJECT_NAME="ResShift"
 export VSC_REPO="$VSC_DATA/projects/resshift/code/$PROJECT_NAME"
-export CONTAINER="$VSC_SCRATCH/containers/resshift_hpc.sif"
+export CONTAINER="$VSC_SCRATCH/containers/resshift_nvidia.sif"
 export DATA_SQSH="$VSC_SCRATCH/datasets/BCI_dataset.sqsh"
 export DATA_DIR="$VSC_SCRATCH/datasets/BCI"
 export SAVE_DIR="$VSC_DATA/projects/resshift/outputs/experiments/bci"
@@ -26,7 +26,7 @@ mkdir -p "$DATA_DIR"
 module purge
 module load calcua/2025a
 
-echo "Starting ResShift BCI Training on HPC..."
+echo "Starting ResShift BCI Training on NVIDIA GPU..."
 echo "Job ID: $SLURM_JOB_ID"
 
 if [ -n "${RESUME_CKPT:-}" ]; then

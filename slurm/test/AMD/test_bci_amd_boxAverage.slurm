@@ -49,6 +49,7 @@ srun apptainer exec --rocm \
     bash -c "cd $VSC_REPO && python inference_resshift.py \
         --task staining_bci \
         --scale 1 \
+        --blend_mode box \
         -i $DATA_DIR/HE/test \
         -o $INFER_OUT"
 

@@ -1,0 +1,64 @@
+Bootstrap: docker
+# ROCm version matches CalcUA/Arcturus (7.0.2)
+# PyTorch already included in base image (2.9.1, Python 3.12)
+From: rocm/pytorch:rocm7.0.2_ubuntu24.04_py3.12_pytorch_release_2.9.1
+
+%post
+    # 1. Basic upgrades
+    python3 -m pip install --no-cache-dir --upgrade pip setuptools wheel
+
+    # 2. Install Foundation Libraries
+    # CRITICAL: We pin numpy < 2.0.0 to avoid the "KeyError: uint32" in albumentations/opencv
+    python3 -m pip install --no-cache-dir \
+        "numpy>=1.26.0,<2.0.0" \
+        "opencv-python-headless" \
+        "six" \
+        "pyyaml" \
+        "typing-extensions"
+
+    # 3. Install ResShift Scientific Stack
+    python3 -m pip install --no-cache-dir \
+        "scipy" \
+        "pandas" \
+        "matplotlib" \
+        "pillow" \
+        "scikit-learn" \
+        "scikit-image" \
+        "tqdm" \
+        "loguru" \
+        "omegaconf" \
+        "einops" \
+        "imageio" \
+        "loralib" \
+        "gradio==3.50" \
+        "safetensors" \
+        "huggingface-hub" \
+        "albucore" \
+        "qudida"
+
+    # 4. Install the "Big" packages with --no-deps
+    # Using specific versions from requirements_frozen.txt for maximum stability
+    python3 -m pip install --no-cache-dir --no-deps \
+        "timm==0.9.12" \
+        "albumentations==1.3.1" \
+        "lpips==0.1.4"
+
+    # 5. FINAL VERIFICATION GATE
+    # This build will fail here if the environment is not 100% functional.
+    echo "Verifying ROCm environment integrity..."
+    
+    # Check 1: Vision operators (The 'nms' error fix)
+    python3 -c "import torch; import torchvision; from torchvision.ops import nms; print('SUCCESS: Vision operators functional.')"
+    
+    # Check 2: All key libraries and NumPy compatibility
+    python3 -c "import numpy; print(f'NumPy version: {numpy.__version__}'); import albumentations; import timm; import lpips; print('SUCCESS: All ResShift dependencies functional.')"
+
+%environment
+    export PYTHONUNBUFFERED=1
+    # Give MIOpen a writable directory for kernel tuning cache
+    export MIOPEN_USER_DB_PATH=/tmp/miopen
+    export MIOPEN_CUSTOM_CACHE_DIR=/tmp/miopen
+
+%help
+    ResShift AMD Container (ROCm 7.0.2).
+    Validated for NumPy 1.x compatibility, Torchvision NMS, and Albumentations.

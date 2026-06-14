@@ -1,21 +1,20 @@
 #!/bin/bash
-#SBATCH --job-name=resshift_mist
+#SBATCH --job-name=train_mist_amd
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=16
 #SBATCH --mem=60G
 #SBATCH --time=24:00:00
 #SBATCH -A ap_invilab_td_thesis
-#SBATCH -p ampere_gpu
+#SBATCH -p arcturus_gpu
 #SBATCH --gres=gpu:1
-#SBATCH -o /data/antwerpen/212/vsc21213/projects/resshift/logs/train_mist_%x.%j.out
-#SBATCH -e /data/antwerpen/212/vsc21213/projects/resshift/logs/train_mist_%x.%j.err
+#SBATCH -o /data/antwerpen/212/vsc21213/projects/resshift/logs/train_mist_amd_%x.%j.out
+#SBATCH -e /data/antwerpen/212/vsc21213/projects/resshift/logs/train_mist_amd_%x.%j.err
 
 set -euo pipefail
 
-# Pass stain at submit time: sbatch --export=ALL,STAIN=ER slurm/train_mist_hpc.slurm
 if [ -z "${STAIN:-}" ]; then
-    echo "ERROR: STAIN not set. Submit with: sbatch --export=ALL,STAIN=ER slurm/train_mist_hpc.slurm"
+    echo "ERROR: STAIN not set."
     exit 1
 fi
 
@@ -23,10 +22,15 @@ STAIN_LOWER=$(echo "$STAIN" | tr '[:upper:]' '[:lower:]')
 
 export PROJECT_NAME="ResShift"
 export VSC_REPO="$VSC_DATA/projects/resshift/code/$PROJECT_NAME"
-export CONTAINER="$VSC_SCRATCH/containers/resshift_hpc.sif"
+export CONTAINER="$VSC_SCRATCH/containers/resshift_amd.sif"
 export DATA_SQSH="$VSC_SCRATCH/datasets/MIST_dataset.sqsh"
 export DATA_DIR="$VSC_SCRATCH/datasets/MIST"
 export SAVE_DIR="$VSC_DATA/projects/resshift/outputs/experiments/mist_${STAIN_LOWER}"
+
+# MIOPEN cache redirection
+export MIOPEN_USER_DB_PATH=/tmp/miopen_$SLURM_JOB_ID
+export MIOPEN_CUSTOM_CACHE_DIR=/tmp/miopen_$SLURM_JOB_ID
+mkdir -p $MIOPEN_USER_DB_PATH
 
 mkdir -p "$DATA_DIR"
 mkdir -p "$SAVE_DIR"
@@ -34,22 +38,25 @@ mkdir -p "$SAVE_DIR"
 module purge
 module load calcua/2025a
 
-echo "Starting ResShift MIST Training — Stain: $STAIN"
-echo "Job ID: $SLURM_JOB_ID"
+echo "Starting ResShift MIST Training (AMD) on arcturus_gpu — Stain: $STAIN"
 
 if [ -n "${RESUME_CKPT:-}" ]; then
-    echo "Resuming from : $RESUME_CKPT"
     RESUME_FLAG="--resume $RESUME_CKPT"
 else
-    echo "Starting fresh training."
     RESUME_FLAG=""
 fi
 
-nvidia-smi --query-gpu=timestamp,index,utilization.gpu,utilization.memory,memory.used,memory.total \
-           --format=csv -l 5 > "$VSC_DATA/projects/resshift/logs/gpu_mist_${STAIN_LOWER}_${SLURM_JOB_ID}.csv" &
+while true; do
+    python3 -c "
+import subprocess, datetime
+r = subprocess.run(['rocm-smi', '-u', '-m', '-P', '-t'], capture_output=True, text=True)
+print(datetime.datetime.now().strftime('%Y/%m/%d %H:%M:%S'), '\n', r.stdout)
+" >> "$VSC_DATA/projects/resshift/logs/gpu_mist_amd_${STAIN_LOWER}_${SLURM_JOB_ID}.log"
+    sleep 5
+done &
 GPU_LOG_PID=$!
 
-srun apptainer exec --nv \
+srun apptainer exec --rocm \
     -B "$DATA_SQSH:$DATA_DIR:image-src=/" \
     -B "$VSC_DATA:$VSC_DATA" \
     "$CONTAINER" \
@@ -59,8 +66,8 @@ srun apptainer exec --nv \
         $RESUME_FLAG"
 
 kill $GPU_LOG_PID 2>/dev/null || true
+rm -rf $MIOPEN_USER_DB_PATH
 
-echo ""
 echo "$STAIN training complete."
-echo "GPU log : $VSC_DATA/projects/resshift/logs/gpu_mist_${STAIN_LOWER}_${SLURM_JOB_ID}.csv"
+echo "GPU log : $VSC_DATA/projects/resshift/logs/gpu_mist_amd_${STAIN_LOWER}_${SLURM_JOB_ID}.log"
 echo "Results : $SAVE_DIR"
